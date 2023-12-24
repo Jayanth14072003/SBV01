@@ -22,8 +22,7 @@ def select_server():
     try:
         server_data = response.json()
         upload_url = server_data["result"]
-        sess_id = server_data["sess_id"]
-        return upload_url, sess_id
+        return upload_url
     except ValueError:
         print("Error parsing server response JSON:", response.text)
         exit(1)
@@ -37,7 +36,7 @@ def is_supported_file(file_name):
 
 # Step 2: Upload a file
 async def handle_video(client: Client, message: Message):
-    upload_url, sess_id = select_server()
+    upload_url = select_server()
 
     if message.video or message.document:
         file_info = message.video or message.document
@@ -48,15 +47,15 @@ async def handle_video(client: Client, message: Message):
 
         file_obj = open(file_path, 'rb')
         upload_data = {
-            'sess_id': (None, sess_id),
-            'utype': (None, 'prem'),
-            'file_0': (os.path.basename(file_path), file_obj),
+            'key': SB_key,
+            'file': (os.path.basename(file_path), file_obj),
+            #'snapshot': formate should be file
         }
 
         response = requests.post(upload_url, files=upload_data)
         try:
             upload_result = response.json()[0]
-            file_code = upload_result["file_code"]
+            file_code = upload_result["filecode"]
             file_url = f"https://streambits.net/{file_code}"
             return file_url
         except ValueError:
@@ -79,7 +78,7 @@ async def handle_video(client: Client, message: Message):
         response = requests.get(upload_url, params=params)
         try:
             upload_result = response.json()
-            file_code = upload_result["result"]["file_code"]
+            file_code = upload_result["result"]["filecode"]
             file_url = f"https://streambits.net/{file_code}"
             return file_url
         except ValueError:
